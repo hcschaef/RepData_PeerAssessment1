@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Loading and preprocessing the data</title>
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 12px;
+   margin: 8px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 { 
+   font-size:2.2em; 
+}
+
+h2 { 
+   font-size:1.8em; 
+}
+
+h3 { 
+   font-size:1.4em; 
+}
+
+h4 { 
+   font-size:1.0em; 
+}
+
+h5 { 
+   font-size:0.9em; 
+}
+
+h6 { 
+   font-size:0.8em; 
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre {	
+   margin-top: 0;
+   max-width: 95%;
+   border: 1px solid #ccc;
+   white-space: pre-wrap;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code.r, code.cpp {
+   background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * { 
+      background: transparent !important; 
+      color: black !important; 
+      filter:none !important; 
+      -ms-filter: none !important; 
+   }
+
+   body { 
+      font-size:12pt; 
+      max-width:100%; 
+   }
+       
+   a, a:visited { 
+      text-decoration: underline; 
+   }
+
+   hr { 
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote { 
+      padding-right: 1em; 
+      page-break-inside: avoid; 
+   }
+
+   tr, img { 
+      page-break-inside: avoid; 
+   }
+
+   img { 
+      max-width: 100% !important; 
+   }
+
+   @page :left { 
+      margin: 15mm 20mm 15mm 10mm; 
+   }
+     
+   @page :right { 
+      margin: 15mm 10mm 15mm 20mm; 
+   }
+
+   p, h2, h3 { 
+      orphans: 3; widows: 3; 
+   }
+
+   h2, h3 { 
+      page-break-after: avoid; 
+   }
+}
+
+</style>
+
+
+
+
+
+</head>
+
+<body>
+<p>library(&ldquo;plyr&rdquo;&ldquo;)
+library(&quot;lattice&rdquo;)
+Sys.setlocale(category = &ldquo;LC_ALL&rdquo;, &ldquo;C&rdquo;)</p>
+
+<h2>Loading and preprocessing the data</h2>
+
+<p>data &lt;- read.csv(&ldquo;./activity.csv&rdquo;)
+sum &lt;- aggregate(data$steps, by=data[&ldquo;date&rdquo;], FUN=sum)
+colnames(sum) &lt;- c(&ldquo;date&rdquo;, &ldquo;sumofsteps&rdquo;)</p>
+
+<h2>What is mean total number of steps taken per day?</h2>
+
+<p>hist(sum$sumofsteps, col = &ldquo;red&rdquo;, main = &ldquo;Histogram of the total number of steps taken each day&rdquo;, xlab = &ldquo;Steps&rdquo;)
+mean &lt;- mean(sum$sumofsteps, na.rm = TRUE)
+median &lt;- median(sum$sumofsteps, na.rm = TRUE)</p>
+
+<h2>What is the average daily activity pattern?</h2>
+
+<p>average &lt;- aggregate(data$steps, by=data[&ldquo;interval&rdquo;], FUN=mean, na.rm=TRUE)
+colnames(average) &lt;- c(&ldquo;interval&rdquo;, &ldquo;averagesteps&rdquo;)
+xyplot(averagesteps ~ interval, data = average, type = &ldquo;l&rdquo;)</p>
+
+<p>max &lt;- (average[which.max(average$averagesteps), ])$interval</p>
+
+<h2>Imputing missing values</h2>
+
+<p>missingSteps &lt;- sum(is.na(data$steps))
+missingDates &lt;- sum(is.na(data$date))
+missingInterval &lt;- sum(is.na(data$interval))
+missingRows &lt;- sum(!complete.cases(data))</p>
+
+<p>rowsNA &lt;- data[!complete.cases(data),]
+rowsCO &lt;- data[complete.cases(data),]
+rowsNA &lt;- merge(subset(rowsNA, select = -steps),average,by=&ldquo;interval&rdquo;)
+colnames(rowsNA) &lt;- c(&ldquo;interval&rdquo;, &ldquo;date&rdquo;, &ldquo;steps&rdquo;)
+rowsNA &lt;- rbind(rowsCO, rowsNA)
+rm(rowsCO)</p>
+
+<p>data2 &lt;- subset(data, select = -steps)
+data2 &lt;- join(data2, rowsNA, by=c(&ldquo;interval&rdquo;, &ldquo;date&rdquo;))
+rm(rowsNA)
+data2 &lt;- transform(data2, steps = as.integer(steps))
+data2 &lt;- data2[ ,c(&ldquo;steps&rdquo;,&ldquo;date&rdquo;,&ldquo;interval&rdquo;)] </p>
+
+<p>sum2 &lt;- aggregate(data2$steps, by=data2[&ldquo;date&rdquo;], FUN=sum)
+colnames(sum2) &lt;- c(&ldquo;date&rdquo;, &ldquo;sumofsteps&rdquo;)</p>
+
+<p>hist(sum2$sumofsteps, col = &ldquo;red&rdquo;, main = &ldquo;Histogram of the total number of steps taken each day&rdquo;, xlab = &ldquo;Steps&rdquo;)
+mean2 &lt;- mean(sum2$sumofsteps, na.rm = TRUE)
+median2 &lt;- median(sum2$sumofsteps, na.rm = TRUE)</p>
+
+<h2>Are there differences in activity patterns between weekdays and weekends?</h2>
+
+<p>data2$date &lt;- as.Date(data2$date, &ldquo;%Y-%m-%d&rdquo;)
+data2$weekday &lt;- weekdays(data2$date)
+data2$type &lt;- ifelse(data2$weekday == &ldquo;Saturday&rdquo;,&ldquo;weekend&rdquo;, ifelse(data2$weekday == &ldquo;Sunday&rdquo;,&ldquo;weekend&rdquo;, &ldquo;weekday&rdquo;))</p>
+
+<p>average2 &lt;- aggregate(data2$steps, by=data2[c(&ldquo;interval&rdquo;,&ldquo;type&rdquo;)], FUN=mean, na.rm=TRUE)
+colnames(average2) &lt;- c(&ldquo;interval&rdquo;, &ldquo;type&rdquo;, &ldquo;averagesteps&rdquo;)
+xyplot(averagesteps ~ interval | type, data = average2, layout = c(1, 2), type = &ldquo;l&rdquo;)</p>
+
+</body>
+
+</html>
+
